@@ -6,6 +6,9 @@
             [unicode-math.core :refer :all]))
 
 
+(defn deg2rad [degrees]
+  (* (/ degrees 180) pi))
+
 ;;;;;;;;;;;;;;;;;;;;;;
 ;; Shape parameters ;;
 ;;;;;;;;;;;;;;;;;;;;;;
@@ -14,20 +17,26 @@
 (def ncols 5)
 
 (def α (/ π 12))                        ; curvature of the columns
-(def β (/ π (if (= nrows 4) 26 36)))    ; curvature of the rows
+(def β (/ π 36))                        ; curvature of the rows
 (def centerrow (- nrows 3))             ; controls front-back tilt
 (def centercol 3)                       ; controls left-right tilt / tenting (higher number is more tenting)
 (def orthographic-x (> nrows 5))        ; for larger number of rows don't curve them in as much
-; (def orthographic-x true)             ; controls curvature of rowS
+; (def orthographic-x true)             ; controls curvature of rows
+(def maltron-style false)                ; use fixed angles for columns
+(def maltron-angles [(deg2rad 10) (deg2rad 10) 0 0 0 (deg2rad -15) (deg2rad -15)])  ; starting point: http://patentimages.storage.googleapis.com/EP0219944A2/imgf0002.png 
 
 (defn column-offset [column] (cond
   (= column 2) [0 2.82 -4.5]
-  (>= column 4) [0 -5.8 5.64]
+  (>= column 4) [0 -12 5.64]           ; original [0 -5.8 5.64]
   :else [0 0 0]))
 
 (def thumb-offsets [6 -3 7])
 
-(def keyboard-z-offset 24)              ; controls height
+(def keyboard-z-offset  9)              ; controls height; original=24
+
+(def extra-width 2.5)                   ; extra space between the base of keys; original= 2
+(def extra-height 1.0)                  ; origin= 1/2
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;
 ;; General variables ;;
@@ -123,13 +132,14 @@
 (def rows (range 0 nrows))
 
 (def cap-top-height (+ plate-thickness sa-profile-key-height))
-(def row-radius (+ (/ (/ (+ mount-height 1/2) 2)
+(def row-radius (+ (/ (/ (+ mount-height extra-height) 2)
                       (Math/sin (/ α 2)))
                    cap-top-height))
-(def column-radius (+ (/ (/ (+ mount-width 2.0) 2)
+(def column-radius (+ (/ (/ (+ mount-width extra-width) 2)
                          (Math/sin (/ β 2)))
                       cap-top-height))
 (def column-x-delta (+ -1 (- (* column-radius (Math/sin β)))))
+(def column-base-angle (* β (- centercol 2)))
 
 (defn key-place [column row shape]
   (let [row-placed-shape (->> shape
@@ -144,10 +154,10 @@
                           (translate (column-offset column)))
         column-z-delta (* column-radius (- 1 (Math/cos column-angle)))
         placed-shape-ortho (->> row-placed-shape
-                                (rotate column-angle [0 1 0])
+                                (rotate (if maltron-style (+ column-base-angle (nth maltron-angles column)) column-angle) [0 1 0])
                                 (translate [(- (* (- column centercol) column-x-delta)) 0 column-z-delta])
                                 (translate (column-offset column)))]
-    (->> (if orthographic-x placed-shape-ortho placed-shape)
+    (->> (if (or maltron-style orthographic-x) placed-shape-ortho placed-shape)
          (rotate (/ π 12) [0 1 0])
          (translate [0 0 keyboard-z-offset]))))
 
@@ -196,15 +206,15 @@
                              (map + (column-offset column)))
         column-z-delta (* column-radius (- 1 (Math/cos column-angle)))
         placed-position-ortho (->> row-position
-                                   (rotate-around-y column-angle)
+                                   (rotate-around-y (if maltron-style (+ column-base-angle (nth maltron-angles column)) column-angle))
                                    (map + [(- (* (- column centercol) column-x-delta)) 0 column-z-delta])
                                    (map + (column-offset column)))]
-    (->> (if orthographic-x placed-position-ortho placed-position)
+    (->> (if (or maltron-style orthographic-x) placed-position-ortho placed-position)
          (rotate-around-y (/ π 12))
-         (map + [0 0 24]))))
+         (map + [0 0 keyboard-z-offset]))))
 
 ; (pr (rotate-around-y π [10 0 1]))
-; (pr (key-position 1 cornerrow [(/ mount-width 2) (- (/ mount-height 2)) 0]))
+(pr (key-position 1 cornerrow [(/ mount-width 2) (- (/ mount-height 2)) 0]))
 
 ;;;;;;;;;;;;;;;;;;;;
 ;; Web Connectors ;;
@@ -266,24 +276,27 @@
          thumb-offsets))
 ; (pr thumborigin)
 
-(defn deg2rad [degrees]
-  (* (/ degrees 180) pi))
-
 (defn thumb-tr-place [shape]
   (->> shape
+      ;  (rotate (deg2rad  10) [1 0 0])
+      ;  (rotate (deg2rad -23) [0 1 0])
+      ;  (rotate (deg2rad  -3) [0 0 1])
        (rotate (deg2rad  10) [1 0 0])
        (rotate (deg2rad -23) [0 1 0])
-       (rotate (deg2rad  -3) [0 0 1])
+       (rotate (deg2rad  10) [0 0 1])
        (translate thumborigin)
-       (translate [-10 -16 0])
+       (translate [-12 -16 3])
        ))
 (defn thumb-tl-place [shape]
   (->> shape
+      ;  (rotate (deg2rad  10) [1 0 0])
+      ;  (rotate (deg2rad -23) [0 1 0])
+      ;  (rotate (deg2rad  -3) [0 0 1])
        (rotate (deg2rad  10) [1 0 0])
        (rotate (deg2rad -23) [0 1 0])
-       (rotate (deg2rad  -3) [0 0 1])
+       (rotate (deg2rad  10) [0 0 1])
        (translate thumborigin)
-       (translate [-30 -15 -2])))
+       (translate [-32 -15 -2])))
 (defn thumb-mr-place [shape]
   (->> shape
        (rotate (deg2rad  -6) [1 0 0])
@@ -434,30 +447,31 @@
 (defn bottom [height p]
   (->> (project p)
        (extrude-linear {:height height :twist 0 :convexity 0})
-       (translate [0 0 (/ height 2)])))
+       (translate [0 0 (- (/ height 2) 10)])))
 
 (defn bottom-hull [& p]
-  (hull p (bottom 10.001 p)))
+  (hull p (bottom 0.001 p)))
 
 (def wall-offset -15)
+(def wall-thickness 2)     ; originally 5
 
 (defn wall-brace [place1 dx1 dy1 post1 place2 dx2 dy2 post2]
   (union
     (hull
       (place1 post1)
       (place1 (translate [0 0 wall-offset] post1))
-      (place1 (translate [(* dx1 5) (* dy1 5) -4] post1))
-      (place1 (translate [(* dx1 5) (* dy1 5) wall-offset] post1))
+      (place1 (translate [(* dx1 wall-thickness) (* dy1 wall-thickness) -4] post1))
+      (place1 (translate [(* dx1 wall-thickness) (* dy1 wall-thickness) wall-offset] post1))
       (place2 post2)
       (place2 (translate [0 0 wall-offset] post2))
-      (place2 (translate [(* dx2 5) (* dy2 5) -4] post2))
-      (place2 (translate [(* dx2 5) (* dy2 5) wall-offset] post2)))
+      (place2 (translate [(* dx2 wall-thickness) (* dy2 wall-thickness) -4] post2))
+      (place2 (translate [(* dx2 wall-thickness) (* dy2 wall-thickness) wall-offset] post2)))
     (bottom-hull
-      (place1 (translate [(* dx1 5) (* dy1 5) wall-offset] post1))
+      (place1 (translate [(* dx1 wall-thickness) (* dy1 wall-thickness) wall-offset] post1))
       (place1 (translate [0         0         wall-offset] post1))
-      (place1 (translate [(* dx1 5) (* dy1 5) wall-offset] post1))
+      (place1 (translate [(* dx1 wall-thickness) (* dy1 wall-thickness) wall-offset] post1))
       (place2 (translate [0         0         wall-offset] post2))
-      (place2 (translate [(* dx2 5) (* dy2 5) wall-offset] post2)))))
+      (place2 (translate [(* dx2 wall-thickness) (* dy2 wall-thickness) wall-offset] post2)))))
 
 (defn key-wall-brace [x1 y1 dx1 dy1 post1 x2 y2 dx2 dy2 post2] 
   (wall-brace (partial key-place x1 y1) dx1 dy1 post1 
@@ -519,7 +533,7 @@
            (translate [0 (/ mount-height 2) wall-offset])
            ))))
 
-(def rj9-vertical-offset (- (last (key-position 0 0 [0 (/ mount-height 2) 0])) 40))
+(def rj9-vertical-offset (- (last (key-position 0 0 [0 (/ mount-height 2) 0])) 35))
 (def rj9-cube   (cube 14.78 13 22.38))
 (def rj9-space  (on-wall-place 1 rj9-vertical-offset rj9-cube))
 (def rj9-holder (on-wall-place 1 rj9-vertical-offset 
@@ -527,34 +541,38 @@
                               (union (translate [0 2 0] (cube 10.78  9 18.38))
                                      (translate [0 0 5] (cube 10.78 13  5))))))
 
+(def teensy-vertical-offset (+ rj9-vertical-offset 10))
 (def teensy-width 20)  
 (def teensy-height 12)
 (def teensy-length 33)
 (def teensy2-length 53)
 (def teensy-pcb-thickness 1.6) 
 (def teensy-offset-height 5)
-(def teensy-vertical-offset )
+(def teensy-holder-length 68)
+(def teensy-holder-offset (- 0 (/ teensy-holder-length 2)))
+(def teensy-holder-top-length 14)
+(def teensy-holder-top-offset (- 1 (/ teensy-holder-top-length 2)))
 
 (def teensy-holder 
-    (on-wall-place 0 rj9-vertical-offset
+    (on-wall-place 0 teensy-vertical-offset
       (translate [-5 0 0] 
         (union 
-          (->> (cube 3 (* 1.2 teensy2-length) (+ 6 teensy-width))
-               (translate [-1.5 -30 0]))
-          (->> (cube teensy-pcb-thickness (* 1.2 teensy2-length) 3)
-               (translate [(/ teensy-pcb-thickness 2) -30 (- -1.5 (/ teensy-width 2))]))
-          (->> (cube 4 (* 1.2 teensy2-length) 4)
-               (translate [(+ 2 teensy-pcb-thickness) -30 (-  -1 (/ teensy-width 2))]))
-          (->> (cube teensy-pcb-thickness (* 0.2 teensy2-length) 3)
-               (translate [(/ teensy-pcb-thickness 2) (+ (* 0.5 teensy2-length) -30) (+ 1.5 (/ teensy-width 2))]))
-          (->> (cube 4 (* 0.2 teensy2-length) 4)
-               (translate [(+ 2 teensy-pcb-thickness) (+ (* 0.5 teensy2-length) -30) (+  1 (/ teensy-width 2))]))
+          (->> (cube 3 teensy-holder-length (+ 6 teensy-width))
+               (translate [-1.5 teensy-holder-offset 0]))
+          (->> (cube teensy-pcb-thickness teensy-holder-length 3)
+               (translate [(/ teensy-pcb-thickness 2) teensy-holder-offset (- -1.5 (/ teensy-width 2))]))
+          (->> (cube 4 teensy-holder-length 4)
+               (translate [(+ 2 teensy-pcb-thickness) teensy-holder-offset (-  -1 (/ teensy-width 2))]))
+          (->> (cube teensy-pcb-thickness teensy-holder-top-length 3)
+               (translate [(/ teensy-pcb-thickness 2) teensy-holder-top-offset (+ 1.5 (/ teensy-width 2))]))
+          (->> (cube 4 teensy-holder-top-length 4)
+               (translate [(+ 2 teensy-pcb-thickness) teensy-holder-top-offset (+ 1 (/ teensy-width 2))]))
            ))))
 
 (def usb-cutout
-  (let [hole-height 6.2
+  (let [hole-height 7.5
         side-radius (/ hole-height 2)
-        hole-width 10.75        
+        hole-width 12
         side-cylinder (->> (cylinder side-radius teensy-length)
                            (with-fn 20)
                            (translate [(/ (- hole-width hole-height) 2) 0 0]))]
@@ -562,10 +580,13 @@
                (mirror [-1 0 0] side-cylinder))
          (rotate (/ π 2) [1 0 0])
          (rotate (/ π 2) [0 1 0])
-         (on-wall-place 0 rj9-vertical-offset))))
+         (on-wall-place 0 teensy-vertical-offset))))
 
+(def usb-cutout
+  (on-wall-place 0 teensy-vertical-offset (->> (cube 9 30 12)
+                                               (translate [-1 10 0]))))
 
-(defn hex-spacer [column row radius height] 
+(defn screw-insert [column row bottom-radius top-radius height] 
   (let [position (key-position column row [0 0 0])
         column-offset (/ mount-width 2)
         row-offset    (/ mount-height 2)
@@ -576,55 +597,74 @@
         is-vertical   (or shift-left shift-right)
         col-angle     (+ (* β (- centercol column)) (/ π 12))
         row-angle     (* α (- row centerrow))]
-    (->> (cylinder radius height)
-         (rotate (if is-vertical (/ π 6) 0) [0 0 1])
+    (->> (union (cylinder [bottom-radius top-radius] height)
+                (translate [0 0 (/ height 2)] (sphere top-radius)))
          (translate [(first position) (second position) (/ height 2)])
          (translate [(* (if shift-right 1 (if shift-left -1 0)) column-offset)
                      (* (if shift-up    1 (if shift-down -1 0)) row-offset)
                      0])
          (translate [(* wall-offset (Math/sin col-angle))
                      (* wall-offset (Math/sin row-angle))
-                     0])
-         (with-fn 6))))
+                     0]))))
 
-(defn hex-spacer-shapes [radius height]
-  (union (hex-spacer 0 0         radius height)
-         (hex-spacer 0 cornerrow radius height)
-         (hex-spacer 3 lastrow   radius height)
-         (hex-spacer 3 0         radius height)
-         (hex-spacer lastcol (dec cornerrow) radius height)
+(defn screw-insert-shapes [bottom-radius top-radius height]
+  (union (screw-insert 0 0         bottom-radius top-radius height)
+         (screw-insert 0 cornerrow bottom-radius top-radius height)
+         (screw-insert 3 lastrow   bottom-radius top-radius height)
+         (screw-insert 3 0         bottom-radius top-radius height)
+        ;  (screw-insert lastcol (dec cornerrow) radius height)
          ))
-(def hex-spacer-height 10)
-(def hex-spacer-radius (/ 5.42 2))
-(def hex-spacer-holes  (hex-spacer-shapes hex-spacer-radius hex-spacer-height))
-(def hex-spacer-outers (hex-spacer-shapes (+ hex-spacer-radius 1.6) (+ hex-spacer-height 1.6)))
+(def screw-insert-height 3.8)
+(def screw-insert-bottom-radius (/ 5.31 2))
+(def screw-insert-top-radius (/ 5.1 2))
+(def screw-insert-holes  (screw-insert-shapes screw-insert-bottom-radius screw-insert-top-radius screw-insert-height))
+(def screw-insert-outers (screw-insert-shapes (+ screw-insert-bottom-radius 1.6) (+ screw-insert-top-radius 1.6) (+ screw-insert-height 1.6)))
 
-
-;; teensy info
-; base width - 18
-; height - 1.45
-; 
 
 (spit "things/right.scad"
-      (write-scad (union
-                   key-holes
-                   connectors
-                   thumb
-                   thumb-connectors
-                   (difference (union case-walls hex-spacer-outers) 
-                               rj9-space 
-                               usb-cutout 
-                               hex-spacer-holes)
-                   rj9-holder
-                   (if (= nrows 4) teensy-holder)
-                   
-                  ;  thumbcaps
-                  ;  caps
-                   )))
+      (write-scad (difference 
+                   (union
+                    key-holes
+                    connectors
+                    thumb
+                    thumb-connectors
+                    (difference (union case-walls 
+                                       screw-insert-outers 
+                                       (if (= nrows 4) teensy-holder)) 
+                                rj9-space 
+                                usb-cutout 
+                                screw-insert-holes)
+                    rj9-holder
+                    ; thumbcaps
+                    ; caps
+                    )
+                   (translate [0 0 -20] (cube 350 350 40)) 
+                  ;  (translate [0 0 -50] (cube 5 5 20)) 
+                  )))
                    
 
 (spit "things/test.scad"
       (write-scad (intersection (translate [29 -5 0] (cube 30 30 30))
-                   (difference (union case-walls hex-spacer-outers) 
-                               hex-spacer-holes)
+                   (difference (union case-walls screw-insert-outers) 
+                               screw-insert-holes)
                    )))
+
+; (spit "things/test.scad"
+;       (write-scad screw-insert-holes))
+
+; (spit "things/test-half.scad"
+;       (write-scad (difference 
+;                    (union
+;                     key-holes
+;                     connectors
+;                     thumb
+;                     thumb-connectors
+;                     (difference (union case-walls screw-insert-outers) 
+;                                 ; rj9-space 
+;                                 usb-cutout 
+;                                 screw-insert-holes)
+;                     ; rj9-holder
+;                     ; (if (= nrows 4) teensy-holder)
+;                    )
+;                    (translate [0 0 -5] (cube 350 350 40)) 
+;                   )))

@@ -5,5 +5,6 @@
 .nrepl-*
 
 .lein-*
-
+*.gcode
+*.scad
 /target

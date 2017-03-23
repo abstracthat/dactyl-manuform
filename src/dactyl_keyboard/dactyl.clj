@@ -13,17 +13,17 @@
 ;; Shape parameters ;;
 ;;;;;;;;;;;;;;;;;;;;;;
 
-(def nrows 4)
-(def ncols 5)
+(def nrows 5)
+(def ncols 6)
 
 (def α (/ π 12))                        ; curvature of the columns
 (def β (/ π 36))                        ; curvature of the rows
 (def centerrow (- nrows 3))             ; controls front-back tilt
-(def centercol 3)                       ; controls left-right tilt / tenting (higher number is more tenting)
-(def orthographic-x (> nrows 5))        ; for larger number of rows don't curve them in as much
-; (def orthographic-x true)             ; controls curvature of rows
-(def maltron-style false)               ; use fixed angles for columns
-(def maltron-angles [(deg2rad 10) (deg2rad 10) 0 0 0 (deg2rad -15) (deg2rad -15)])  ; starting point: http://patentimages.storage.googleapis.com/EP0219944A2/imgf0002.png 
+(def centercol 2)                       ; controls left-right tilt / tenting (higher number is more tenting)
+(def tenting-angle (/ π 12))            ; or, change this for more precise tenting control
+(def column-style 
+  (if (> nrows 5) :orthographic :standard))  ; options include :standard, :orthographic, and :fixed
+; (def column-style :fixed)
 
 (defn column-offset [column] (cond
   (= column 2) [0 2.82 -4.5]
@@ -32,7 +32,7 @@
 
 (def thumb-offsets [6 -3 7])
 
-(def keyboard-z-offset  9)              ; controls height; original=24
+(def keyboard-z-offset 14)              ; controls overall height; original=9 with centercol=3; use 15 for centercol=2
 
 (def extra-width 2.5)                   ; extra space between the base of keys; original= 2
 (def extra-height 1.0)                  ; original= 0.5
@@ -40,6 +40,16 @@
 (def wall-z-offset -15)                 ; length of the first downward-sloping part of the wall (negative)
 (def wall-xy-offset 5)                  ; offset in the x and/or y direction for the first downward-sloping part of the wall (negative)
 (def wall-thickness 2)                  ; wall thickness parameter; originally 5
+
+;; Settings for column-style == :fixed 
+;; The defaults roughly match Maltron settings
+;;   http://patentimages.storage.googleapis.com/EP0219944A2/imgf0002.png
+;; Fixed-z overrides the z portion of the column ofsets above.
+;; NOTE: THIS DOESN'T WORK QUITE LIKE I'D HOPED.
+(def fixed-angles [(deg2rad 10) (deg2rad 10) 0 0 0 (deg2rad -15) (deg2rad -15)])  
+(def fixed-x [-41.5 -22.5 0 20.3 41.4 65.5 89.6])  ; relative to the middle finger
+(def fixed-z [12.1    8.3 0  5   10.7 14.5 17.5])  
+(def fixed-tenting (deg2rad 0))  
 
 ;;;;;;;;;;;;;;;;;;;;;;;
 ;; General variables ;;
@@ -144,25 +154,63 @@
 (def column-x-delta (+ -1 (- (* column-radius (Math/sin β)))))
 (def column-base-angle (* β (- centercol 2)))
 
-(defn key-place [column row shape]
-  (let [row-placed-shape (->> shape
-                              (translate [0 0 (- row-radius)])
-                              (rotate (* α (- centerrow row)) [1 0 0])      
-                              (translate [0 0 row-radius]))
-        column-angle (* β (- centercol column))   
-        placed-shape (->> row-placed-shape
-                          (translate [0 0 (- column-radius)])
-                          (rotate column-angle [0 1 0])
-                          (translate [0 0 column-radius])
-                          (translate (column-offset column)))
+(defn apply-key-geometry [translate-fn rotate-x-fn rotate-y-fn column row shape]
+  (let [column-angle (* β (- centercol column))   
+        placed-shape (->> shape
+                          (translate-fn [0 0 (- row-radius)])
+                          (rotate-x-fn  (* α (- centerrow row)))      
+                          (translate-fn [0 0 row-radius])
+                          (translate-fn [0 0 (- column-radius)])
+                          (rotate-y-fn  column-angle)
+                          (translate-fn [0 0 column-radius])
+                          (translate-fn (column-offset column)))
         column-z-delta (* column-radius (- 1 (Math/cos column-angle)))
-        placed-shape-ortho (->> row-placed-shape
-                                (rotate (if maltron-style (+ column-base-angle (nth maltron-angles column)) column-angle) [0 1 0])
-                                (translate [(- (* (- column centercol) column-x-delta)) 0 column-z-delta])
-                                (translate (column-offset column)))]
-    (->> (if (or maltron-style orthographic-x) placed-shape-ortho placed-shape)
-         (rotate (/ π 12) [0 1 0])
-         (translate [0 0 keyboard-z-offset]))))
+        placed-shape-ortho (->> shape
+                                (translate-fn [0 0 (- row-radius)])
+                                (rotate-x-fn  (* α (- centerrow row)))      
+                                (translate-fn [0 0 row-radius])
+                                (rotate-y-fn  column-angle)
+                                (translate-fn [(- (* (- column centercol) column-x-delta)) 0 column-z-delta])
+                                (translate-fn (column-offset column)))
+        placed-shape-fixed (->> shape
+                                (rotate-y-fn  (nth fixed-angles column))
+                                (translate-fn [(nth fixed-x column) 0 (nth fixed-z column)])
+                                (translate-fn [0 0 (- (+ row-radius (nth fixed-z column)))])
+                                (rotate-x-fn  (* α (- centerrow row)))      
+                                (translate-fn [0 0 (+ row-radius (nth fixed-z column))])
+                                (rotate-y-fn  fixed-tenting)
+                                (translate-fn [0 (second (column-offset column)) 0])
+                                )]
+    (->> (case column-style
+          :orthographic placed-shape-ortho 
+          :fixed        placed-shape-fixed
+                        placed-shape)
+         (rotate-y-fn  tenting-angle)
+         (translate-fn [0 0 keyboard-z-offset]))))
+
+(defn key-place [column row shape]
+  (apply-key-geometry translate 
+    (fn [angle obj] (rotate angle [1 0 0] obj)) 
+    (fn [angle obj] (rotate angle [0 1 0] obj)) 
+    column row shape))
+
+(defn rotate-around-x [angle position] 
+  (mmul 
+   [[1 0 0]
+    [0 (Math/cos angle) (- (Math/sin angle))]
+    [0 (Math/sin angle)    (Math/cos angle)]]
+   position))
+
+(defn rotate-around-y [angle position] 
+  (mmul 
+   [[(Math/cos angle)     0 (Math/sin angle)]
+    [0                    1 0]
+    [(- (Math/sin angle)) 0 (Math/cos angle)]]
+   position))
+
+(defn key-position [column row position]
+  (apply-key-geometry (partial map +) rotate-around-x rotate-around-y column row position))
+
 
 (def key-holes
   (apply union
@@ -181,40 +229,6 @@
                          (not= row lastrow))]
            (->> (sa-cap (if (= column 5) 1 1))
                 (key-place column row)))))
-
-(defn rotate-around-x [angle position] 
-  (mmul 
-   [[1 0 0]
-    [0 (Math/cos angle) (- (Math/sin angle))]
-    [0 (Math/sin angle)    (Math/cos angle)]]
-   position))
-
-(defn rotate-around-y [angle position] 
-  (mmul 
-   [[(Math/cos angle)     0 (Math/sin angle)]
-    [0                    1 0]
-    [(- (Math/sin angle)) 0 (Math/cos angle)]]
-   position))
-
-(defn key-position [column row position]
-  (let [row-position (->> position
-                          (map + [0 0 (- row-radius)])
-                          (rotate-around-x (* α (- centerrow row)))      
-                          (map + [0 0 row-radius]))
-        column-angle (* β (- centercol column))   
-        placed-position (->> row-position
-                             (map + [0 0 (- column-radius)])
-                             (rotate-around-y column-angle)
-                             (map + [0 0 column-radius])
-                             (map + (column-offset column)))
-        column-z-delta (* column-radius (- 1 (Math/cos column-angle)))
-        placed-position-ortho (->> row-position
-                                   (rotate-around-y (if maltron-style (+ column-base-angle (nth maltron-angles column)) column-angle))
-                                   (map + [(- (* (- column centercol) column-x-delta)) 0 column-z-delta])
-                                   (map + (column-offset column)))]
-    (->> (if (or maltron-style orthographic-x) placed-position-ortho placed-position)
-         (rotate-around-y (/ π 12))
-         (map + [0 0 keyboard-z-offset]))))
 
 ; (pr (rotate-around-y π [10 0 1]))
 ; (pr (key-position 1 cornerrow [(/ mount-width 2) (- (/ mount-height 2)) 0]))
@@ -664,22 +678,52 @@
 (def screw-insert-bottom-radius (/ 5.31 2))
 (def screw-insert-top-radius (/ 5.1 2))
 (def screw-insert-holes  (screw-insert-all-shapes screw-insert-bottom-radius screw-insert-top-radius screw-insert-height))
-(def screw-insert-outers (screw-insert-all-shapes (+ screw-insert-bottom-radius 1.6) (+ screw-insert-top-radius 1.6) (+ screw-insert-height 1.6)))
+(def screw-insert-outers (screw-insert-all-shapes (+ screw-insert-bottom-radius 1.6) (+ screw-insert-top-radius 1.6) (+ screw-insert-height 1.5)))
+(def screw-insert-screw-holes  (screw-insert-all-shapes 1.7 1.7 350))
 
-(defn teensy-screw-insert-place [shape] 
+(defn teensy-screw-insert-place [shape length] 
  (let [position (vec (map - teensy-bot-xy (map (partial * 0.3) (map - teensy-top-xy teensy-bot-xy))))] 
    (->> shape 
         (rotate (/ π 2) [0 -1 0])
-        (translate [(- 3 teensy-holder-width (/ screw-insert-height 2)) (- (+ teensy2-length 4)) 0])
+        (translate [(- 3 teensy-holder-width (/ screw-insert-height 2)) (- (+ length 7)) 0])
         (rotate teensy-holder-angle [0 0 -1])
         (translate [(first teensy-top-xy) (second teensy-top-xy) 15])
         )))
 
-(def teensy-screw-insert-hole  (teensy-screw-insert-place (cylinder [screw-insert-bottom-radius screw-insert-top-radius] (+ screw-insert-height 0.4))))
-(def teensy-screw-insert-outer (teensy-screw-insert-place (translate [0 0 1] (cylinder [(+ screw-insert-bottom-radius 1.6) (+ screw-insert-top-radius 1.6)] (+ screw-insert-height 2)))))
+(def teensy-screw-insert-holes  
+  (union 
+    (teensy-screw-insert-place (cylinder [screw-insert-bottom-radius screw-insert-top-radius] (+ screw-insert-height 0.4)) teensy-length)
+    (teensy-screw-insert-place (cylinder [screw-insert-bottom-radius screw-insert-top-radius] (+ screw-insert-height 0.4)) teensy2-length)))
+(def teensy-screw-insert-outers 
+  (union 
+    (teensy-screw-insert-place (translate [0 0 1] (cylinder [(+ screw-insert-bottom-radius 1.6) (+ screw-insert-top-radius 1.6)] (+ screw-insert-height 1.7))) teensy-length)
+    (teensy-screw-insert-place (translate [0 0 1] (cylinder [(+ screw-insert-bottom-radius 1.6) (+ screw-insert-top-radius 1.6)] (+ screw-insert-height 1.7))) teensy2-length)))
 
-(spit "things/right.scad"
-      (write-scad (difference 
+
+(def wire-post-height 7)
+(def wire-post-overhang 3.5)
+(def wire-post-diameter 2.6)
+(defn wire-post [direction offset]
+   (->> (union (translate [0 (* wire-post-diameter -0.5 direction) 0] (cube wire-post-diameter wire-post-diameter wire-post-height))
+               (translate [0 (* wire-post-overhang -0.5 direction) (/ wire-post-height -2)] (cube wire-post-diameter wire-post-overhang wire-post-diameter)))
+        (translate [0 (- offset) (+ (/ wire-post-height -2) 3) ])
+        (rotate (/ α -2) [1 0 0])
+        (translate [3 (/ mount-height -2) 0])))
+
+(def wire-posts
+  (union
+     (thumb-ml-place (translate [-5 0 -2] (wire-post  1 0)))
+     (thumb-ml-place (translate [ 0 0 -2.5] (wire-post -1 6)))
+     (thumb-ml-place (translate [ 5 0 -2] (wire-post  1 0)))
+     (for [column (range 0 lastcol)
+           row (range 0 cornerrow)]
+       (union
+        (key-place column row (translate [-5 0 0] (wire-post 1 0)))
+        (key-place column row (translate [0 0 0] (wire-post -1 6)))
+        (key-place column row (translate [5 0 0] (wire-post  1 0)))))))
+
+
+(def model-right (difference 
                    (union
                     key-holes
                     connectors
@@ -688,21 +732,27 @@
                     (difference (union (difference 
                                          (union case-walls 
                                                 screw-insert-outers 
-                                                teensy-screw-insert-outer)
+                                                teensy-screw-insert-outers)
                                          teensy-holder-hole)
                                        teensy-holder)
                                 rj9-space 
                                 usb-cutout 
-                                teensy-screw-insert-hole
+                                teensy-screw-insert-holes
                                 screw-insert-holes)
                     rj9-holder
+                    wire-posts
                     ; thumbcaps
                     ; caps
                     )
                    (translate [0 0 -20] (cube 350 350 40)) 
-                  ;  (translate [0 0 -150] (cube 5 5 20)) 
-                  )))
-                   
+                  ))
+
+(spit "things/right.scad"
+      (write-scad model-right))
+ 
+(spit "things/left.scad"
+      (write-scad (mirror [-1 0 0] model-right)))
+                  
 (spit "things/right-test.scad"
       (write-scad 
                    (union
@@ -711,37 +761,15 @@
                     thumb
                     thumb-connectors
                     case-walls 
-                    teensy-holder
-                    ; teensy-holder-hole
-                                screw-insert-outers 
-                                teensy-screw-insert-hole
-                                teensy-screw-insert-outer
-                                usb-cutout 
-                                rj9-space 
+                    thumbcaps
+                    caps
+                    ; teensy-holder
+                    ; ; teensy-holder-hole
+                    ;             screw-insert-outers 
+                    ;             teensy-screw-insert-holes
+                    ;             teensy-screw-insert-outers
+                    ;             usb-cutout 
+                    ;             rj9-space 
+                                ; wire-posts
                   )))
 
-; (spit "things/test.scad"
-;       (write-scad (intersection (translate [29 -5 0] (cube 30 30 30))
-;                    (difference (union case-walls screw-insert-outers) 
-;                                screw-insert-holes)
-;                    )))
-
-; (spit "things/test.scad"
-;       (write-scad screw-insert-holes))
-
-; (spit "things/test-half.scad"
-;       (write-scad (difference 
-;                    (union
-;                     key-holes
-;                     connectors
-;                     thumb
-;                     thumb-connectors
-;                     (difference (union case-walls screw-insert-outers) 
-;                                 ; rj9-space 
-;                                 usb-cutout 
-;                                 screw-insert-holes)
-;                     ; rj9-holder
-;                     ; (if (= nrows 4) teensy-holder)
-;                    )
-;                    (translate [0 0 -5] (cube 350 350 40)) 
-;                   )))

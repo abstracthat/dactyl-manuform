@@ -13,13 +13,13 @@
 ;; Shape parameters ;;
 ;;;;;;;;;;;;;;;;;;;;;;
 
-(def nrows 5)
-(def ncols 6)
+(def nrows 4)
+(def ncols 5)
 
 (def α (/ π 12))                        ; curvature of the columns
 (def β (/ π 36))                        ; curvature of the rows
 (def centerrow (- nrows 3))             ; controls front-back tilt
-(def centercol 2)                       ; controls left-right tilt / tenting (higher number is more tenting)
+(def centercol 3)                       ; controls left-right tilt / tenting (higher number is more tenting)
 (def tenting-angle (/ π 12))            ; or, change this for more precise tenting control
 (def column-style 
   (if (> nrows 5) :orthographic :standard))  ; options include :standard, :orthographic, and :fixed
@@ -32,7 +32,7 @@
 
 (def thumb-offsets [6 -3 7])
 
-(def keyboard-z-offset 14)              ; controls overall height; original=9 with centercol=3; use 15 for centercol=2
+(def keyboard-z-offset 9)               ; controls overall height; original=9 with centercol=3; use 15 for centercol=2
 
 (def extra-width 2.5)                   ; extra space between the base of keys; original= 2
 (def extra-height 1.0)                  ; original= 0.5
@@ -773,3 +773,13 @@
                                 ; wire-posts
                   )))
 
+(spit "things/right-plate.scad"
+      (write-scad 
+                   (cut
+                     (translate [0 0 -0.1]
+                       (difference (union case-walls
+                                          teensy-holder
+                                          ; rj9-holder
+                                          screw-insert-outers)
+                                   (translate [0 0 -10] screw-insert-screw-holes))
+                  ))))

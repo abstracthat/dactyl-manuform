@@ -101,7 +101,7 @@ If wires aren't dangling, a bottom plate may not be needed.
 You need something on the bottom to keep the keyboard from sliding around. 
 Without a plate, you could use a rubber pad, or you could dip the bottom of the keyboard in PlastiDip.
 
-For more photos of the first complete wiring or v0.4, see [Imgur](http://imgur.com/a/v9eIO).
+For more photos of the first complete wiring of v0.4, see [Imgur](http://imgur.com/a/v9eIO).
 
 ### Firmware
 

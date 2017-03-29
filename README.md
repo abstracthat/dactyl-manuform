@@ -1,7 +1,7 @@
 # The Dactyl-ManuForm Keyboard
 This is a fork of the [Dactyl](https://github.com/adereth/dactyl-keyboard), a parameterized, split-hand, concave, columnar, ergonomic keyboard.
 
-[Imgur](http://i.imgur.com/LdjEhrR.jpg)
+![Imgur](http://i.imgur.com/LdjEhrR.jpg)
 
 The main change is that the thumb cluster was adapted from the [ManuForm keyboard](https://github.com/jeffgran/ManuForm) ([geekhack](https://geekhack.org/index.php?topic=46015.0)). The walls were changed to just drop to the floor. The keyboard is paramaterized to allow adjusting the following: 
 
@@ -77,7 +77,7 @@ I wired one half using the traditional approach of using the legs of a diode to 
 For this side, I used magnet wire to wire columns. That worked okay. 
 The magnet wire is small enough, it wants to move around, and it's hard to tell if you have a good connection.
 
-[Imgur](http://i.imgur.com/7kPvSgg.jpg)
+![Imgur](http://i.imgur.com/7kPvSgg.jpg)
 
 For another half, I used stripboard for the row connections. 
 This allowed me to presolder all of the diodes. 
@@ -89,7 +89,7 @@ This worked a bit better than the magnet wire for me.
 For a future version, I may try just bare tinned copper wire for columns (something like #20). 
 With the stripboard, it's pretty easy keeping row and column connections separate.
 
-[Imgur](http://i.imgur.com/JOm5ElP.jpg)
+![Imgur](http://i.imgur.com/JOm5ElP.jpg)
 
 Note that a telephone handset cable has leads that are reversed, so take this into account when connecting these leads to the controller.
 

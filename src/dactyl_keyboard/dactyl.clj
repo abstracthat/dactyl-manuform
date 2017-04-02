@@ -645,7 +645,7 @@
   (let [shift-right   (= column lastcol)
         shift-left    (= column 0)
         shift-up      (and (not (or shift-right shift-left)) (= row 0))
-        shift-down    (and (not (or shift-right shift-left)) (= row lastrow))
+        shift-down    (and (not (or shift-right shift-left)) (>= row lastrow))
         position      (if shift-up     (key-position column row (map + (wall-locate2  0  1) [0 (/ mount-height 2) 0]))
                        (if shift-down  (key-position column row (map - (wall-locate2  0 -1) [0 (/ mount-height 2) 0]))
                         (if shift-left (map + (left-key-position row 0) (wall-locate3 -1 0)) 
@@ -656,9 +656,9 @@
     )))
 
 (defn screw-insert-all-shapes [bottom-radius top-radius height]
-  (union ; (screw-insert 0 0         bottom-radius top-radius height)
-         (screw-insert 0 1         bottom-radius top-radius height)
-         (screw-insert 3 lastrow   bottom-radius top-radius height)
+  (union (screw-insert 0 0         bottom-radius top-radius height)
+         (screw-insert 0 lastrow   bottom-radius top-radius height)
+         (screw-insert 2 (+ lastrow 0.3)  bottom-radius top-radius height)
          (screw-insert 3 0         bottom-radius top-radius height)
          (screw-insert lastcol 1   bottom-radius top-radius height)
          ))

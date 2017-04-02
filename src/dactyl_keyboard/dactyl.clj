@@ -13,8 +13,8 @@
 ;; Shape parameters ;;
 ;;;;;;;;;;;;;;;;;;;;;;
 
-(def nrows 4)
-(def ncols 5)
+(def nrows 5)
+(def ncols 6)
 
 (def α (/ π 12))                        ; curvature of the columns
 (def β (/ π 36))                        ; curvature of the rows
@@ -596,18 +596,16 @@
 (def teensy-height 12)
 (def teensy-length 33)
 (def teensy2-length 53)
-(def teensy-pcb-thickness 1.6) 
+(def teensy-pcb-thickness 2) 
 (def teensy-holder-width  (+ 7 teensy-pcb-thickness))
 (def teensy-holder-height (+ 6 teensy-width))
 (def teensy-offset-height 5)
-(def teensy-holder-length 72)
-(def teensy-holder-offset (/ teensy-holder-length -2))
 (def teensy-holder-top-length 18)
-(def teensy-top-xy (key-position 0 0 (map + (wall-locate3  0 1) [(/ mount-width -2) (/ mount-height  2) 0])))
-(def teensy-bot-xy (map + (key-position 0 2 (map + (wall-locate3 -1 0) [(/ mount-width -2)  (/ mount-height  2) 0]))
-                          [(* 1 teensy-holder-width) 0 0]))
-(def teensy-holder-top-offset (/ teensy-holder-top-length -2))
-(def teensy-holder-angle (Math/atan2 (- (first teensy-top-xy) (first teensy-bot-xy)) (- (second teensy-top-xy) (second teensy-bot-xy))))
+(def teensy-top-xy (key-position 0 (- centerrow 1) (wall-locate3 -1 0)))
+(def teensy-bot-xy (key-position 0 (+ centerrow 1) (wall-locate3 -1 0)))
+(def teensy-holder-length (- (second teensy-top-xy) (second teensy-bot-xy)))
+(def teensy-holder-offset (/ teensy-holder-length -2))
+(def teensy-holder-top-offset (- (/ teensy-holder-top-length 2) teensy-holder-length))
  
 (def teensy-holder 
     (->> 
@@ -621,11 +619,9 @@
           (->> (cube teensy-pcb-thickness teensy-holder-top-length 3)
                (translate [(+ (/ teensy-pcb-thickness 2) 3) teensy-holder-top-offset (+ 1.5 (/ teensy-width 2))]))
           (->> (cube 4 teensy-holder-top-length 4)
-               (translate [(+ teensy-pcb-thickness 5) teensy-holder-top-offset (+ 1 (/ teensy-width 2))]))
-          (->> (cube teensy-holder-width 2 teensy-holder-height)
-               (translate [(+ (/ teensy-holder-width 2)) -1 0])))
+               (translate [(+ teensy-pcb-thickness 5) teensy-holder-top-offset (+ 1 (/ teensy-width 2))])))
         (translate [(- teensy-holder-width) 0 0])
-        (rotate teensy-holder-angle [0 0 -1])
+        (translate [(- 1) 0 0])
         (translate [(first teensy-top-xy) 
                     (- (second teensy-top-xy) 1) 
                     (/ (+ 6 teensy-width) 2)])
@@ -634,7 +630,6 @@
 (def usb-cutout
   (->> (cube 8 30 12)
        (translate [-4 -5 0])
-       (rotate teensy-holder-angle [0 0 -1])
        (translate [(+ (first teensy-top-xy) 3)
                    (+ (second teensy-top-xy) 0) 
                    (/ teensy-holder-height 2)])
@@ -643,7 +638,6 @@
 (def teensy-holder-hole
   (->> (cube teensy-holder-width 30 teensy-holder-height)
        (translate [(/ teensy-holder-width -2) -15 (/ teensy-holder-height 2)])
-       (rotate teensy-holder-angle [0 0 -1])
        (translate [(first teensy-top-xy) 
                    (- (second teensy-top-xy) 1) 
                    0])))
@@ -686,7 +680,6 @@
    (->> shape 
         (rotate (/ π 2) [0 -1 0])
         (translate [(- 3 teensy-holder-width (/ screw-insert-height 2)) (- (+ length 7)) 0])
-        (rotate teensy-holder-angle [0 0 -1])
         (translate [(first teensy-top-xy) (second teensy-top-xy) 15])
         )))
 
@@ -763,7 +756,8 @@
                     case-walls 
                     thumbcaps
                     caps
-                    ; teensy-holder
+                    teensy-holder
+                    rj9-holder
                     ; ; teensy-holder-hole
                     ;             screw-insert-outers 
                     ;             teensy-screw-insert-holes

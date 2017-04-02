@@ -753,4 +753,10 @@
                                    (translate [0 0 -10] screw-insert-screw-holes))
                   ))))
 
+(spit "things/test.scad"
+      (write-scad 
+         (difference usb-holder usb-holder-hole)))
+
+
+
 (defn -main [] 1)  ; dummy to make it easier to batch

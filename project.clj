@@ -1,6 +1,7 @@
 (defproject dactyl-keyboard "0.1.0-SNAPSHOT"
   :description "A parametrized, split-hand, concave, columnar, erogonomic keyboard"
   :url "http://example.com/FIXME"
+  :main dactyl-keyboard.dactyl
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.7.0"]

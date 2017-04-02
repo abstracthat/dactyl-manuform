@@ -583,7 +583,7 @@
   ))
 
 
-(def rj9-start  (map + [0 -3  0] (key-position 1 0 (map + (wall-locate3 0 1) [0 (/ mount-height  2) 0]))))
+(def rj9-start  (map + [0 -3  0] (key-position 0 0 (map + (wall-locate3 0 1) [0 (/ mount-height  2) 0]))))
 (def rj9-position  [(first rj9-start) (second rj9-start) 11])
 (def rj9-cube   (cube 14.78 13 22.38))
 (def rj9-space  (translate rj9-position rj9-cube))
@@ -592,22 +592,30 @@
                               (union (translate [0 2 0] (cube 10.78  9 18.38))
                                      (translate [0 0 5] (cube 10.78 13  5))))))
 
+(def usb-holder-position (key-position 1 0 (map + (wall-locate2 0 1) [0 (/ mount-height 2) 0])))
+(def usb-holder-size [6.5 10.0 13.6])
+(def usb-holder-thickness 4)
+(def usb-holder
+    (->> (cube (+ (first usb-holder-size) usb-holder-thickness) (second usb-holder-size) (+ (last usb-holder-size) usb-holder-thickness))
+         (translate [(first usb-holder-position) (second usb-holder-position) (/ (+ (last usb-holder-size) usb-holder-thickness) 2)])))
+(def usb-holder-hole
+    (->> (apply cube usb-holder-size)
+         (translate [(first usb-holder-position) (second usb-holder-position) (/ (+ (last usb-holder-size) usb-holder-thickness) 2)])))
+
 (def teensy-width 20)  
 (def teensy-height 12)
 (def teensy-length 33)
 (def teensy2-length 53)
-(def teensy-pcb-thickness 1.6) 
+(def teensy-pcb-thickness 2) 
 (def teensy-holder-width  (+ 7 teensy-pcb-thickness))
 (def teensy-holder-height (+ 6 teensy-width))
 (def teensy-offset-height 5)
-(def teensy-holder-length 72)
-(def teensy-holder-offset (/ teensy-holder-length -2))
 (def teensy-holder-top-length 18)
-(def teensy-top-xy (key-position 0 0 (map + (wall-locate3  0 1) [(/ mount-width -2) (/ mount-height  2) 0])))
-(def teensy-bot-xy (map + (key-position 0 2 (map + (wall-locate3 -1 0) [(/ mount-width -2)  (/ mount-height  2) 0]))
-                          [(* 1 teensy-holder-width) 0 0]))
-(def teensy-holder-top-offset (/ teensy-holder-top-length -2))
-(def teensy-holder-angle (Math/atan2 (- (first teensy-top-xy) (first teensy-bot-xy)) (- (second teensy-top-xy) (second teensy-bot-xy))))
+(def teensy-top-xy (key-position 0 (- centerrow 1) (wall-locate3 -1 0)))
+(def teensy-bot-xy (key-position 0 (+ centerrow 1) (wall-locate3 -1 0)))
+(def teensy-holder-length (- (second teensy-top-xy) (second teensy-bot-xy)))
+(def teensy-holder-offset (/ teensy-holder-length -2))
+(def teensy-holder-top-offset (- (/ teensy-holder-top-length 2) teensy-holder-length))
  
 (def teensy-holder 
     (->> 
@@ -621,33 +629,13 @@
           (->> (cube teensy-pcb-thickness teensy-holder-top-length 3)
                (translate [(+ (/ teensy-pcb-thickness 2) 3) teensy-holder-top-offset (+ 1.5 (/ teensy-width 2))]))
           (->> (cube 4 teensy-holder-top-length 4)
-               (translate [(+ teensy-pcb-thickness 5) teensy-holder-top-offset (+ 1 (/ teensy-width 2))]))
-          (->> (cube teensy-holder-width 2 teensy-holder-height)
-               (translate [(+ (/ teensy-holder-width 2)) -1 0])))
+               (translate [(+ teensy-pcb-thickness 5) teensy-holder-top-offset (+ 1 (/ teensy-width 2))])))
         (translate [(- teensy-holder-width) 0 0])
-        (rotate teensy-holder-angle [0 0 -1])
+        (translate [(- 1) 0 0])
         (translate [(first teensy-top-xy) 
                     (- (second teensy-top-xy) 1) 
                     (/ (+ 6 teensy-width) 2)])
            ))
-
-(def usb-cutout
-  (->> (cube 8 30 12)
-       (translate [-4 -5 0])
-       (rotate teensy-holder-angle [0 0 -1])
-       (translate [(+ (first teensy-top-xy) 3)
-                   (+ (second teensy-top-xy) 0) 
-                   (/ teensy-holder-height 2)])
-       )) 
-
-(def teensy-holder-hole
-  (->> (cube teensy-holder-width 30 teensy-holder-height)
-       (translate [(/ teensy-holder-width -2) -15 (/ teensy-holder-height 2)])
-       (rotate teensy-holder-angle [0 0 -1])
-       (translate [(first teensy-top-xy) 
-                   (- (second teensy-top-xy) 1) 
-                   0])))
-
 
 (defn screw-insert-shape [bottom-radius top-radius height] 
    (union (cylinder [bottom-radius top-radius] height)
@@ -681,25 +669,6 @@
 (def screw-insert-outers (screw-insert-all-shapes (+ screw-insert-bottom-radius 1.6) (+ screw-insert-top-radius 1.6) (+ screw-insert-height 1.5)))
 (def screw-insert-screw-holes  (screw-insert-all-shapes 1.7 1.7 350))
 
-(defn teensy-screw-insert-place [shape length] 
- (let [position (vec (map - teensy-bot-xy (map (partial * 0.3) (map - teensy-top-xy teensy-bot-xy))))] 
-   (->> shape 
-        (rotate (/ π 2) [0 -1 0])
-        (translate [(- 3 teensy-holder-width (/ screw-insert-height 2)) (- (+ length 7)) 0])
-        (rotate teensy-holder-angle [0 0 -1])
-        (translate [(first teensy-top-xy) (second teensy-top-xy) 15])
-        )))
-
-(def teensy-screw-insert-holes  
-  (union 
-    (teensy-screw-insert-place (cylinder [screw-insert-bottom-radius screw-insert-top-radius] (+ screw-insert-height 0.4)) teensy-length)
-    (teensy-screw-insert-place (cylinder [screw-insert-bottom-radius screw-insert-top-radius] (+ screw-insert-height 0.4)) teensy2-length)))
-(def teensy-screw-insert-outers 
-  (union 
-    (teensy-screw-insert-place (translate [0 0 1] (cylinder [(+ screw-insert-bottom-radius 1.6) (+ screw-insert-top-radius 1.6)] (+ screw-insert-height 1.7))) teensy-length)
-    (teensy-screw-insert-place (translate [0 0 1] (cylinder [(+ screw-insert-bottom-radius 1.6) (+ screw-insert-top-radius 1.6)] (+ screw-insert-height 1.7))) teensy2-length)))
-
-
 (def wire-post-height 7)
 (def wire-post-overhang 3.5)
 (def wire-post-diameter 2.6)
@@ -729,15 +698,12 @@
                     connectors
                     thumb
                     thumb-connectors
-                    (difference (union (difference 
-                                         (union case-walls 
-                                                screw-insert-outers 
-                                                teensy-screw-insert-outers)
-                                         teensy-holder-hole)
-                                       teensy-holder)
+                    (difference (union case-walls 
+                                       screw-insert-outers 
+                                       teensy-holder
+                                       usb-holder)
                                 rj9-space 
-                                usb-cutout 
-                                teensy-screw-insert-holes
+                                usb-holder-hole
                                 screw-insert-holes)
                     rj9-holder
                     wire-posts
@@ -763,7 +729,10 @@
                     case-walls 
                     thumbcaps
                     caps
-                    ; teensy-holder
+                    teensy-holder
+                    rj9-holder
+                    usb-holder-hole
+                    ; usb-holder-hole
                     ; ; teensy-holder-hole
                     ;             screw-insert-outers 
                     ;             teensy-screw-insert-holes
@@ -783,3 +752,11 @@
                                           screw-insert-outers)
                                    (translate [0 0 -10] screw-insert-screw-holes))
                   ))))
+
+(spit "things/test.scad"
+      (write-scad 
+         (difference usb-holder usb-holder-hole)))
+
+
+
+(defn -main [] 1)  ; dummy to make it easier to batch

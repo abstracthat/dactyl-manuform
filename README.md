@@ -107,6 +107,9 @@ Without a plate, you could use a rubber pad, or you could dip the bottom of the 
 
 For more photos of the first complete wiring of v0.4, see [Imgur](http://imgur.com/a/v9eIO).
 
+This is how the rows/columns wire to the keys and the ProMicro
+![Wire Diagram](https://docs.google.com/drawings/d/1s9aAg5bXBrhtb6Xw-sGOQQEndRNOqpBRyUyHkgpnSps/pub?w=1176&h=621)
+
 ### Firmware
 
 Firmware goes hand in hand with how you wire the circuit. 

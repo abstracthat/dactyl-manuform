@@ -110,6 +110,16 @@ For more photos of the first complete wiring of v0.4, see [Imgur](http://imgur.c
 This is how the rows/columns wire to the keys and the ProMicro
 ![Wire Diagram](https://docs.google.com/drawings/d/1s9aAg5bXBrhtb6Xw-sGOQQEndRNOqpBRyUyHkgpnSps/pub?w=1176&h=621)
 
+
+#### Alternative row-driven wiring diagram for ProMicro:
+
+NOTE: you also make sure the firmware is set up correctly (ex: change row pins with col pins)
+
+![Left Wire Diagram](/resources/dactyl_manuform_left_wire_diagram.png)
+
+![Left Wire Diagram](/resources/dactyl_manuform_right_wire_diagram.png)
+
+
 ### Firmware
 
 Firmware goes hand in hand with how you wire the circuit. 

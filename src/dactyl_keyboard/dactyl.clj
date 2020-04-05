@@ -766,16 +766,16 @@
                     thumb
                     thumb-connectors
                     (difference (union case-walls
-                                       screw-insert-outers
-                                       teensy-holder)
-                                       ; usb-holder)
+                                       screw-insert-outers)
+                                       ;teensy-holder)
+                                       ;usb-holder)
                                 ; rj9-space
                                 ; usb-holder-hole
                                 screw-insert-holes)
                     ; rj9-holder
                     wire-posts
-                    ; thumbcaps
-                    ; caps
+                    thumbcaps
+                    caps
                     )
                    (translate [0 0 -20] (cube 350 350 40))
                   ))

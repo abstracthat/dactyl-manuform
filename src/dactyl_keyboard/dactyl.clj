@@ -352,7 +352,7 @@
   (->> shape
       ;  (rotate (deg2rad  10) [1 0 0])
       ;  (rotate (deg2rad -23) [0 1 0])
-      ;  (rotate (deg2rad  -3) [0 0 1])
+      ;  (rotate (deg2rad  3) [0 0 1])
        (rotate (deg2rad  10) [1 0 0])
        (rotate (deg2rad -23) [0 1 0])
        (rotate (deg2rad  10) [0 0 1])
@@ -368,27 +368,50 @@
        ))
 (defn thumb-ml-place [shape]
   (->> shape
-       (rotate (deg2rad   6) [1 0 0])
+       (rotate (deg2rad   -4) [1 0 0])
        (rotate (deg2rad -34) [0 1 0])
-       (rotate (deg2rad  40) [0 0 1])
+       (rotate (deg2rad  48) [0 0 1])
        (translate thumborigin)
-       (translate [-51 -25 -12])))
+       (translate [-49 -25 -14])))
+;(defn thumb-ml-place [shape]
+;  (->> shape
+;       (rotate (deg2rad   6) [1 0 0])
+;       (rotate (deg2rad -34) [0 1 0])
+;       (rotate (deg2rad  40) [0 0 1])
+;       (translate thumborigin)
+;       (translate [-49 -25 -14])))
 (defn thumb-br-place [shape]
   (->> shape
        (rotate (deg2rad -16) [1 0 0])
-       (rotate (deg2rad -33) [0 1 0])
+       (rotate (deg2rad 0) [0 1 0])
        (rotate (deg2rad  54) [0 0 1])
        (translate thumborigin)
-       (translate [-37.8 -55.3 -25.3])
+       (translate [-38.8 -63.3 -18.3])
        ))
 (defn thumb-bl-place [shape]
   (->> shape
        (rotate (deg2rad  -4) [1 0 0])
-       (rotate (deg2rad -35) [0 1 0])
+       (rotate (deg2rad 0) [0 1 0])
        (rotate (deg2rad  52) [0 0 1])
        (translate thumborigin)
-       (translate [-56.3 -43.3 -23.5])
+       (translate [-56.3 -50.3 -18.5])
        ))
+;(defn thumb-br-place [shape]
+;  (->> shape
+;       (rotate (deg2rad -16) [1 0 0])
+;       (rotate (deg2rad -33) [0 1 0])
+;       (rotate (deg2rad  54) [0 0 1])
+;       (translate thumborigin)
+;       (translate [-37.8 -55.3 -25.3])
+;       ))
+;(defn thumb-bl-place [shape]
+;  (->> shape
+;       (rotate (deg2rad  -4) [1 0 0])
+;       (rotate (deg2rad -35) [0 1 0])
+;       (rotate (deg2rad  52) [0 0 1])
+;       (translate thumborigin)
+;       (translate [-56.3 -43.3 -23.5])
+;       ))
 
 (defn thumb-1x-layout [shape]
   (union

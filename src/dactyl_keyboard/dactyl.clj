@@ -67,6 +67,7 @@
 (def keyswitch-width 14.4)
 
 (def sa-profile-key-height 12.7)
+(def dsa-profile-key-height 8)
 
 (def plate-thickness 4)
 (def mount-width (+ keyswitch-width 3))
@@ -133,6 +134,49 @@
                                      (->> (polygon [[11 6] [-11 6] [-11 -6] [11 -6]])
                                           (extrude-linear {:height 0.1 :twist 0 :convexity 0})
                                           (translate [0 0 12])))]
+                   (->> key-cap
+                        (translate [0 0 (+ 5 plate-thickness)])
+                        (color [240/255 223/255 175/255 1])))})
+
+;;;;;;;;;;;;;;;;;
+;; DSA Keycaps ;;
+;;;;;;;;;;;;;;;;;
+
+(def dsa-length 18.25)
+(def dsa-double-length 37.5)
+(def dsa-cap {1 (let [bl2 (/ 18.5 2)
+                     m (/ 17 2)
+                     key-cap (hull (->> (polygon [[bl2 bl2] [bl2 (- bl2)] [(- bl2) (- bl2)] [(- bl2) bl2]])
+                                        (extrude-linear {:height 0.1 :twist 0 :convexity 0})
+                                        (translate [0 0 0.05]))
+                                   (->> (polygon [[m m] [m (- m)] [(- m) (- m)] [(- m) m]])
+                                        (extrude-linear {:height 0.1 :twist 0 :convexity 0})
+                                        (translate [0 0 1]))
+                                   (->> (polygon [[6 6] [6 -6] [-6 -6] [-6 6]])
+                                        (extrude-linear {:height 0.1 :twist 0 :convexity 0})
+                                        (translate [0 0 8])))]
+                 (->> key-cap
+                      (translate [0 0 (+ 5 plate-thickness)])
+                      (color [220/255 163/255 163/255 1])))
+             2 (let [bl2 (/ sa-double-length 2)
+                     bw2 (/ 18.25 2)
+                     key-cap (hull (->> (polygon [[bw2 bl2] [bw2 (- bl2)] [(- bw2) (- bl2)] [(- bw2) bl2]])
+                                        (extrude-linear {:height 0.1 :twist 0 :convexity 0})
+                                        (translate [0 0 0.05]))
+                                   (->> (polygon [[6 16] [6 -16] [-6 -16] [-6 16]])
+                                        (extrude-linear {:height 0.1 :twist 0 :convexity 0})
+                                        (translate [0 0 12])))]
+                 (->> key-cap
+                      (translate [0 0 (+ 5 plate-thickness)])
+                      (color [127/255 159/255 127/255 1])))
+             1.5 (let [bl2 (/ 18.25 2)
+                       bw2 (/ 28 2)
+                       key-cap (hull (->> (polygon [[bw2 bl2] [bw2 (- bl2)] [(- bw2) (- bl2)] [(- bw2) bl2]])
+                                          (extrude-linear {:height 0.1 :twist 0 :convexity 0})
+                                          (translate [0 0 0.05]))
+                                     (->> (polygon [[11 6] [-11 6] [-11 -6] [11 -6]])
+                                          (extrude-linear {:height 0.1 :twist 0 :convexity 0})
+                                          (translate [0 0 8])))]
                    (->> key-cap
                         (translate [0 0 (+ 5 plate-thickness)])
                         (color [240/255 223/255 175/255 1])))})
@@ -227,7 +271,7 @@
                row rows
                :when (or (.contains [2 3] column)
                          (not= row lastrow))]
-           (->> (sa-cap (if (= column 5) 1 1))
+           (->> (dsa-cap (if (= column 5) 1 1))
                 (key-place column row)))))
 
 ; (pr (rotate-around-y π [10 0 1]))
@@ -368,8 +412,8 @@
 
 (def thumbcaps
   (union
-   (thumb-1x-layout (sa-cap 1))
-   (thumb-15x-layout (rotate (/ π 2) [0 0 1] (sa-cap 1.5)))))
+   (thumb-1x-layout (dsa-cap 1))
+   (thumb-15x-layout (rotate (/ π 2) [0 0 1] (dsa-cap 1.5)))))
 
 
 (def thumb

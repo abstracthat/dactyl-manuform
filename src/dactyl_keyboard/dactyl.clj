@@ -32,7 +32,7 @@
 
 (def thumb-offsets [6 -3 -6])
 
-(def keyboard-z-offset 40)               ; controls overall height; original=9 with centercol=3; use 16 for centercol=2
+(def keyboard-z-offset 35)               ; controls overall height; original=9 with centercol=3; use 16 for centercol=2
 
 (def extra-width 1.5)                   ; extra space between the base of keys; original= 2
 (def extra-height 0.5)                  ; original= 0.5

@@ -1,0 +1,7 @@
+- Remove cornerrow (column 2,3 extra keys)
+- Lower last row to keep last row keys in more agile location.
+- Redo key spacing with properly calculated DSA keycap profile.
+- Add better Cherry/DCS style profile keycaps.
+- Improve thumb cluster
+- Add trackball/joystick module
+- Add screen/LEDs

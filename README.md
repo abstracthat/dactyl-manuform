@@ -123,7 +123,7 @@ NOTE: you also make sure the firmware is set up correctly (ex: change row pins w
 ### Firmware
 
 Firmware goes hand in hand with how you wire the circuit. 
-I adapted the QMK firmware [here](https://github.com/tshort/qmk_firmware/tree/master/keyboards/dactyl-manuform). 
+I adapted the QMK firmware [here](https://github.com/qmk/qmk_firmware/tree/master/keyboards/handwired/dactyl_manuform). 
 This allows each side to work separately or together. 
 This site also shows connections for the Arduino Pro Micro controllers.
 

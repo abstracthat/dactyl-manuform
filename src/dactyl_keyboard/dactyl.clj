@@ -756,57 +756,108 @@
         (key-place column row (translate [0 0 0] (wire-post -1 6)))
         (key-place column row (translate [5 0 0] (wire-post  1 0)))))))
 
+(def case-body
+  (difference
+    (difference
+      (union
+        case-walls
+        screw-insert-outers
+      )
+      screw-insert-holes
+    )
+    (translate [0 0 -20] (cube 350 350 40))
+  )
+)
 
-(def model-right (difference
-                   (union
-                    key-holes
-                    connectors
-                    thumb
-                    thumb-connectors
-                    (difference (union case-walls
-                                       screw-insert-outers)
-                                       ;teensy-holder)
-                                       ;usb-holder)
-                                ; rj9-space
-                                ; usb-holder-hole
-                                screw-insert-holes)
+(def case-upper
+  (union
+    key-holes
+    connectors
+    thumb
+    thumb-connectors
+    wire-posts
+    case-body
+  )
+)
+
+(def electronics-mount
+  (union
+    teensy-holder
+  )
+)
+
+(def socket-holes
+  (union
+    usb-holder-hole
+  )
+)
+
+(def right-hand
+  (difference
+    (union case-upper electronics-mount)
+    socket-holes
+  )
+)
+
+(def left-hand
+  (mirror [-1 0 0] right-hand)
+)
+
                     ; rj9-holder
-                    wire-posts
-                    thumbcaps
-                    caps
-                    )
-                   (translate [0 0 -20] (cube 350 350 40))
-                  ))
+                    ; rj9-space
+                    ; usb-holder
+                    ; usb-holder-hole
+                    ; teensy-holder
+                    ; teensy-holder-hole
+                    ; teensy-screw-insert-holes
+                    ; teensy-screw-insert-outers
+                    ; usb-cutout
 
+;; Right hand keyboard half. Includes key-caps.
+(def rhs-vis
+  (union
+    right-hand
+    caps
+    thumbcaps
+  )
+)
+
+;; Left hand keyboard half. Includes key-caps.
+(def lhs-vis
+  (mirror [-1 0 0] rhs-vis)
+)
+
+;; Places both hands in one file for viewing the completed model.
+;; Includes all key caps.
+(def vis
+  (union
+    (translate [40 0 0] rhs-vis)
+    (translate [-40 0 0] lhs-vis)
+  )
+)
+
+
+;;;;;;;;;;;;;;;;;;;
+;; File outputs. ;;
+;;;;;;;;;;;;;;;;;;;
+
+;; Create a test OpenSCAD model. Used for visually inspecting and testing
+;; components.
+(spit "things/test.scad"
+      (write-scad vis))
+
+
+;; Create the OpenSCAD model for RHS half
 (spit "things/right.scad"
-      (write-scad model-right))
+      (write-scad right-hand))
 
+
+;; Create the OpenSCAD model for LHS half
 (spit "things/left.scad"
-      (write-scad (mirror [-1 0 0] model-right)))
+      (write-scad left-hand))
 
-(spit "things/right-test.scad"
-      (write-scad
-                   (union
-                    key-holes
-                    connectors
-                    thumb
-                    thumb-connectors
-                    case-walls
-                    thumbcaps
-                    caps
-                    teensy-holder
-                    ; rj9-holder
-                    ; usb-holder-hole
-                    ; usb-holder-hole
-                    ; ; teensy-holder-hole
-                    ;             screw-insert-outers
-                    ;             teensy-screw-insert-holes
-                    ;             teensy-screw-insert-outers
-                    ;             usb-cutout
-                    ;             rj9-space
-                                ; wire-posts
-                  )))
 
+;; Create the OpenSCAD model for the RHS bottom plate.
 (spit "things/right-plate.scad"
       (write-scad
                    (cut
@@ -817,11 +868,5 @@
                                           screw-insert-outers)
                                    (translate [0 0 -10] screw-insert-screw-holes))
                   ))))
-
-(spit "things/test.scad"
-      (write-scad
-         (difference usb-holder usb-holder-hole)))
-
-
 
 (defn -main [dum] 1)  ; dummy to make it easier to batch

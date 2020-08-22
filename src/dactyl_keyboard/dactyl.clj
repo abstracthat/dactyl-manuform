@@ -744,6 +744,7 @@
         (rotate (/ α -2) [1 0 0])
         (translate [3 (/ mount-height -2) 0])))
 
+; Creates hooks to neatly run wires between switches.
 (def wire-posts
   (union
      (thumb-ml-place (translate [-5 0 -2] (wire-post  1 0)))
@@ -756,6 +757,7 @@
         (key-place column row (translate [0 0 0] (wire-post -1 6)))
         (key-place column row (translate [5 0 0] (wire-post  1 0)))))))
 
+; Case 'walls' and screw holes. Does not drop below z-axis origin.
 (def case-body
   (difference
     (difference
@@ -765,10 +767,11 @@
       )
       screw-insert-holes
     )
-    (translate [0 0 -20] (cube 350 350 40))
+    (translate [0 0 -20] (cube 350 350 40)) ; Trims case edges from z-axis origin down.
   )
 )
 
+; Keyboard chassis upper, to which key switches can be mounted directly.
 (def case-upper
   (union
     key-holes
@@ -780,17 +783,32 @@
   )
 )
 
+; Component used for testing or inspecting purposes only. Do not depend on this.
+(def inspect
+  (union
+    connectors
+    thumb-connectors
+    case-body
+  )
+)
+
+; Mounts for electronics components other than switches and wire hooks.
 (def electronics-mount
   (union
     teensy-holder
   )
 )
 
+; Holes for connectors on chassis. These should be subtracted from the case models.
 (def socket-holes
   (union
     usb-holder-hole
   )
 )
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Complete printable model pieces. ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def right-hand
   (difference
@@ -803,15 +821,20 @@
   (mirror [-1 0 0] right-hand)
 )
 
-                    ; rj9-holder
-                    ; rj9-space
-                    ; usb-holder
-                    ; usb-holder-hole
-                    ; teensy-holder
-                    ; teensy-holder-hole
-                    ; teensy-screw-insert-holes
-                    ; teensy-screw-insert-outers
-                    ; usb-cutout
+;; Options for electronics, not all finished
+; rj9-holder
+; rj9-space
+; usb-holder
+; usb-holder-hole
+; teensy-holder
+; teensy-holder-hole
+; teensy-screw-insert-holes
+; teensy-screw-insert-outers
+; usb-cutout
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Complete models for viewing/inspecting. Includes key caps. ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Right hand keyboard half. Includes key-caps.
 (def rhs-vis
@@ -844,7 +867,7 @@
 ;; Create a test OpenSCAD model. Used for visually inspecting and testing
 ;; components.
 (spit "things/test.scad"
-      (write-scad vis))
+      (write-scad inspect))
 
 
 ;; Create the OpenSCAD model for RHS half
